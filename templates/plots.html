@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Plots</h2>
+
+    <!-- Display plots -->
+    <h3 class="mt-4">Visualizations</h3>
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <h4>Expenses by Category</h4>
+            {% if category_plot_url %}
+                <img src="data:image/png;base64,{{ category_plot_url }}" alt="Expenses by Category" class="img-fluid">
+            {% else %}
+                <p>No data available for Expenses by Category.</p>
+            {% endif %}
+        </div>
+        <div class="col-md-6 mb-4">
+            <h4>Expenses by Spend Source</h4>
+            {% if spend_source_plot_url %}
+                <img src="data:image/png;base64,{{ spend_source_plot_url }}" alt="Expenses by Spend Source" class="img-fluid">
+            {% else %}
+                <p>No data available for Expenses by Spend Source.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <h4>Credit Card Outstanding</h4>
+            {% if credit_card_plot_url %}
+                <img src="data:image/png;base64,{{ credit_card_plot_url }}" alt="Credit Card Outstanding" class="img-fluid">
+            {% else %}
+                <p>No data available for Credit Card Outstanding.</p>
+            {% endif %}
+        </div>
+        <div class="col-md-6 mb-4">
+            <h4>Funds Allocation</h4>
+            {% if fund_plot_url %}
+                <img src="data:image/png;base64,{{ fund_plot_url }}" alt="Funds Allocation" class="img-fluid">
+            {% else %}
+                <p>No data available for Funds Allocation.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

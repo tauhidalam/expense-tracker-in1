@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Add Fund</h2>
+    <form method="POST" action="">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+            {{ form.allocation_date.label(class="form-control-label") }}
+            {{ form.allocation_date(class="form-control form-control-lg") }}
+            {% for error in form.allocation_date.errors %}
+                <span class="text-danger">{{ error }}</span>
+            {% endfor %}
+        </div>
+        <div class="form-group">
+            {{ form.fund_type.label(class="form-control-label") }}
+            {{ form.fund_type(class="form-control form-control-lg") }}
+            {% for error in form.fund_type.errors %}
+                <span class="text-danger">{{ error }}</span>
+            {% endfor %}
+        </div>
+        <div class="form-group">
+            {{ form.amount.label(class="form-control-label") }}
+            {{ form.amount(class="form-control form-control-lg") }}
+            {% for error in form.amount.errors %}
+                <span class="text-danger">{{ error }}</span>
+            {% endfor %}
+        </div>
+        <div class="form-group">
+            {{ form.submit(class="btn btn-primary btn-block btn-lg") }}
+        </div>
+    </form>
+
+    <!-- Display existing funds -->
+    <h3 class="mt-4">Existing Funds</h3>
+    <table class="table table-bordered mt-3">
+        <thead>
+            <tr>
+                <th>Fund Type</th>
+                <th>Amount</th>
+                <th>Allocation Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for fund in user_funds %}
+            <tr>
+                <td>{{ fund.fund_type }}</td>
+                <td>₹{{ fund.amount }}</td>
+                <td>{{ fund.allocation_date.strftime('%Y-%m-%d') }}</td>
+                <td>
+                    <form method="POST" action="">
+                        <input type="hidden" name="reset_fund" value="{{ fund.id }}">
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to reset this fund?');">Reset Fund</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="text-center">No funds available</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-lg mt-3">Back to Dashboard</a>
+{% endblock %}

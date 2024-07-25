@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Expense Tracker{% endblock %}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        /* Custom styles for navigation links */
+        .navbar-nav .nav-link {
+            transition: color 0.3s ease;
+        }
+        .navbar-nav .nav-link:hover {
+            color: #0056b3; /* Bootstrap primary color on hover */
+        }
+        .dropdown-menu .dropdown-item {
+            transition: color 0.3s ease;
+        }
+        .dropdown-menu .dropdown-item:hover {
+            color: #0056b3; /* Bootstrap primary color on hover */
+            background-color: #e9ecef; /* Light gray background for dropdown items on hover */
+        }
+        /* Footer styles */
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px 0;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+        }
+        .footer a {
+            color: #0056b3;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: none;
+        }
+        .footer .social-icons {
+            font-size: 24px;
+            margin: 0;
+            padding: 0;
+        }
+        .footer .social-icons a {
+            margin: 0 10px;
+            color: #0056b3;
+        }
+        .footer .social-icons a:hover {
+            color: #003d7a;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="{{ url_for('dashboard') }}">Expense Tracker</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ml-auto">
+                {% if current_user.is_authenticated %}
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('add_expense') }}">Add Expense</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('view_expenses') }}">View Expenses</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('add_income') }}">Add Income</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('add_credit_card') }}">Add/View Credit Card</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('add_fund') }}">Add/View Fund</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('export_report') }}">Export</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">Logout</a></li>
+                {% else %}
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('login') }}">Login</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('register') }}">Register</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p class="mb-0">Developed by <strong>Touhid Shaikh</strong></p>
+            <div class="social-icons">
+                <a href="https://www.linkedin.com/in/touhid-shaikh-8209461a4/" target="_blank" aria-label="LinkedIn">
+                    <i class="fab fa-linkedin-in"></i>
+                </a>
+                <a href="https://github.com/tauhidalam" target="_blank" aria-label="GitHub">
+                    <i class="fab fa-github"></i>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap and jQuery JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

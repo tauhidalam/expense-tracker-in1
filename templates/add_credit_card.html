@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Add Credit Card</h2>
+    <form method="POST" action="">
+        {{ form.hidden_tag() }}
+        
+        <div class="form-group">
+            {{ form.name.label(class="form-control-label") }}
+            {{ form.name(class="form-control") }}
+            {% for error in form.name.errors %}
+                <div class="alert alert-danger">{{ error }}</div>
+            {% endfor %}
+        </div>
+        
+        <div class="form-group">
+            {{ form.credit_limit.label(class="form-control-label") }}
+            {{ form.credit_limit(class="form-control") }}
+            {% for error in form.credit_limit.errors %}
+                <div class="alert alert-danger">{{ error }}</div>
+            {% endfor %}
+        </div>
+        
+        <div class="form-group">
+            {{ form.submit(class="btn btn-primary") }}
+        </div>
+    </form>
+
+    <h2 class="mt-5">Existing Credit Cards & Transactions</h2>
+    <table class="table table-striped mt-3">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Credit Limit (₹)</th>
+                <th>Available Limit (₹)</th>
+                <th>Outstanding Balance (₹)</th>
+                <th>Expenses</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for card in credit_cards %}
+                <tr>
+                    <td>{{ card.name }}</td>
+                    <td>₹{{ card.credit_limit }}</td>
+                    <td>₹{{ card.available_limit }}</td>
+                    <td>₹{{ card.outstanding }}</td>
+                    <td>
+                        <ul class="list-unstyled mb-0">
+                            {% for expense in credit_card_expenses[card.id] %}
+                                <li>
+                                    <span class="font-weight-bold">{{ expense.date }}:</span> {{ expense.description }} - ₹{{ expense.amount }}
+                                </li>
+                            {% else %}
+                                <li>No expenses recorded.</li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                    <td>
+                        <!-- Form to reset outstanding balance -->
+                        <form method="POST" action="{{ url_for('add_credit_card') }}" style="display:inline;" onsubmit="return confirmResetOutstanding();">
+                            {{ form.hidden_tag() }}
+                            <input type="hidden" name="reset_outstanding" value="{{ card.id }}">
+                            <button type="submit" class="btn btn-danger btn-sm">Reset Outstanding</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        function confirmResetOutstanding() {
+            return confirm('Are you sure you want to reset the outstanding balance? This action cannot be undone.');
+        }
+    </script>
+{% endblock %}
