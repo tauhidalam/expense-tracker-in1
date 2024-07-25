@@ -16,11 +16,13 @@ from io import BytesIO
 import base64
 import seaborn as sns
 import pandas as pd
+from flask_migrate import Migrate
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///expense_tracker.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///expense_tracker.db')
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
@@ -765,4 +767,4 @@ if __name__ == '__main__':
     if not os.path.exists(db_file):
         with app.app_context():
             db.create_all()
-    app.run(debug=True)
+    app.run(debug=False)
