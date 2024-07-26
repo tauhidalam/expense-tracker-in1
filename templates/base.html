@@ -7,9 +7,23 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
+        /* Full height layout for body */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Flex-grow for the main content to push footer down */
+        .content {
+            flex: 1;
+        }
+
         /* Custom styles for navigation links */
         .navbar {
-            background-color: #343a40; /* Dark background color */
+            background-color: #0179ff; /* Blue background color */
         }
         .navbar-brand {
             color: #fff; /* White text color for brand */
@@ -25,7 +39,7 @@
         .navbar-nav .nav-link:hover, 
         .navbar-nav .nav-link.active {
             color: #212529 !important; /* Dark text color on hover or active */
-            background-color: rgba(248, 249, 250, 0.7); /* Light background color with transparency */
+            background-color: rgba(255, 255, 255, 0.7); /* Light background color with transparency */
             border-radius: 5px; /* Rounded corners */
             box-shadow: 0 6px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for glass effect */
         }
@@ -36,19 +50,26 @@
             color: #212529; /* Dark text color on hover */
             background-color: #e9ecef; /* Light gray background for dropdown items on hover */
         }
+        /* Custom styles for navbar toggler icon */
+        .navbar-toggler {
+            border-color: rgba(255, 255, 255, 0.1); /* Light border color */
+        }
+        .navbar-toggler-icon {
+            background-image: url('data:image/svg+xml;charset=utf8,%3Csvg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath stroke="rgba%28255, 255, 255, 1%29" stroke-width="2" stroke-linecap="round" stroke-miterlimit="10" d="M4 7h22M4 15h22M4 23h22"/%3E%3C/svg%3E');
+        }
         /* Footer styles */
         .footer {
-            background-color: #343a40;
+            background-color: #0179ff; /* Blue background color */
             padding: 20px 0;
             text-align: center;
-            border-top: 1px solid #e9ecef;
+            border-top: 10px solid #e9ecef;
         }
-        .footer a {
-            color: #f8f9fa;
+        .footer p, .footer a {
+            color: #f8f9fa; /* White text color */
             text-decoration: none;
         }
         .footer a:hover {
-            text-decoration: none;
+            color: #d1ecf1; /* Light blue hover color */
         }
         .footer .social-icons {
             font-size: 24px;
@@ -57,15 +78,15 @@
         }
         .footer .social-icons a {
             margin: 0 10px;
-            color: #f8f9fa;
+            color: #f8f9fa; /* White text color */
         }
         .footer .social-icons a:hover {
-            color: #d1ecf1;
+            color: #d1ecf1; /* Light blue hover color */
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
+    <nav class="navbar navbar-expand-lg">
         <a class="navbar-brand" href="{{ url_for('dashboard') }}">Expense Tracker</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -95,7 +116,7 @@
             </ul>
         </div>
     </nav>
-    <div class="container">
+    <div class="content container">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
