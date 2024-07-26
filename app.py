@@ -4,6 +4,7 @@ from wtforms import StringField, PasswordField, BooleanField, DateField, FloatFi
 from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional , ValidationError
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import Integer 
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from datetime import datetime
 import os
@@ -494,7 +495,6 @@ def add_income():
     recent_incomes = Income.query.filter_by(user_id=user_id).order_by(Income.date.desc()).limit(10).all()
     return render_template('add_income.html', form=form, recent_incomes=recent_incomes)
 
-
 @app.route('/add_credit_card', methods=['GET', 'POST'])
 @login_required
 def add_credit_card():
@@ -534,10 +534,13 @@ def add_credit_card():
     # Fetch all expenses for each credit card
     credit_card_expenses = {}
     for card in credit_cards:
-        credit_card_expenses[card.id] = Expense.query.filter_by(user_id=user_id, credit_card_name=card.id).all()
+        # Ensure credit_card_name is cast to integer in the query
+        credit_card_expenses[card.id] = Expense.query.filter(
+            Expense.user_id == user_id,
+            Expense.credit_card_name.cast(Integer) == card.id
+        ).all()
 
     return render_template('add_credit_card.html', form=form, credit_cards=credit_cards, credit_card_expenses=credit_card_expenses)
-
 
 @app.route('/add_fund', methods=['GET', 'POST'])
 @login_required
@@ -768,4 +771,4 @@ if __name__ == '__main__':
     if not os.path.exists(db_file):
         with app.app_context():
             db.create_all()
-    app.run(debug=False)
+    app.run(debug=True)

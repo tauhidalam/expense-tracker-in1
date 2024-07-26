@@ -3,33 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}Expense Tracker{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         /* Custom styles for navigation links */
-        .navbar-nav .nav-link {
-            color: #000; /* Change text color to black */
-            transition: color 0.3s ease;
+        .navbar {
+            background-color: #343a40; /* Dark background color */
         }
-        .navbar-nav .nav-link:hover {
-            color: #0056b3; /* Bootstrap primary color on hover */
+        .navbar-brand {
+            color: #fff; /* White text color for brand */
+        }
+        .navbar-brand:hover {
+            color: #d1ecf1; /* Light blue hover color for brand */
+        }
+        .navbar-nav .nav-link {
+            color: #f8f9fa; /* White text color */
+            transition: color 0.3s ease, background-color 0.3s ease; /* Smooth transition for color and background */
+            padding: 10px 15px; /* Increase padding for better touch targets */
+        }
+        .navbar-nav .nav-link:hover, 
+        .navbar-nav .nav-link.active {
+            color: #212529 !important; /* Dark text color on hover or active */
+            background-color: rgba(248, 249, 250, 0.7); /* Light background color with transparency */
+            border-radius: 5px; /* Rounded corners */
+            box-shadow: 0 6px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for glass effect */
         }
         .dropdown-menu .dropdown-item {
             transition: color 0.3s ease;
         }
         .dropdown-menu .dropdown-item:hover {
-            color: #0056b3; /* Bootstrap primary color on hover */
+            color: #212529; /* Dark text color on hover */
             background-color: #e9ecef; /* Light gray background for dropdown items on hover */
         }
         /* Footer styles */
         .footer {
-            background-color: #f8f9fa;
+            background-color: #343a40;
             padding: 20px 0;
             text-align: center;
             border-top: 1px solid #e9ecef;
         }
         .footer a {
-            color: #0056b3;
+            color: #f8f9fa;
             text-decoration: none;
         }
         .footer a:hover {
@@ -42,15 +57,15 @@
         }
         .footer .social-icons a {
             margin: 0 10px;
-            color: #0056b3;
+            color: #f8f9fa;
         }
         .footer .social-icons a:hover {
-            color: #003d7a;
+            color: #d1ecf1;
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark">
         <a class="navbar-brand" href="{{ url_for('dashboard') }}">Expense Tracker</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -58,14 +73,21 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
                 {% if current_user.is_authenticated %}
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('add_expense') }}">Add Expense</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('view_expenses') }}">View Expenses</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('add_income') }}">Add Income</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('add_credit_card') }}">Add/View Credit Card</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('add_fund') }}">Add/View Fund</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('export_report') }}">Export</a></li>
-                    <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">Logout</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.endpoint == 'add_expense' %}active{% endif %}" href="{{ url_for('add_expense') }}">Add Expense</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.endpoint == 'view_expenses' %}active{% endif %}" href="{{ url_for('view_expenses') }}">View Expenses</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.endpoint == 'add_income' %}active{% endif %}" href="{{ url_for('add_income') }}">Add Income</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.endpoint == 'add_credit_card' %}active{% endif %}" href="{{ url_for('add_credit_card') }}">Add/View Credit Card</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.endpoint == 'add_fund' %}active{% endif %}" href="{{ url_for('add_fund') }}">Add/View Fund</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.endpoint == 'export_report' %}active{% endif %}" href="{{ url_for('export_report') }}">Export</a></li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Hello, {{ current_user.username }}
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="userDropdown">
+                            <a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a>
+                        </div>
+                    </li>
                 {% else %}
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('login') }}">Login</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('register') }}">Register</a></li>
