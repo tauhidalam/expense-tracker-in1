@@ -20,6 +20,9 @@ import pandas as pd
 from flask_migrate import Migrate
 
 app = Flask(__name__)
+secret_key = os.environ.get('SECRET_KEY', 'default_secret_key')
+print(f'SECRET_KEY: {secret_key}')  # Add this line for debugging
+app.config['SECRET_KEY'] = secret_key
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
