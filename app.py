@@ -388,7 +388,7 @@ def add_expense():
 
         db.session.commit()
         flash('Expense added successfully!', 'success')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('add_expense'))
 
     # Set the default values and disable fields as necessary
     if form.spend_source.data != 'Credit Card':
