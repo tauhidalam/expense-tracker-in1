@@ -22,18 +22,18 @@
         </div>
         
         <div class="form-group">
-            {{ form.submit(class="btn btn-primary") }}
+            {{ form.submit(class="btn btn-primary btn-lg") }}
         </div>
     </form>
 
     <h2 class="mt-5">Existing Credit Cards & Transactions</h2>
     <table class="table table-striped mt-3">
-        <thead>
+        <thead class="thead-dark">
             <tr>
                 <th>Name</th>
-                <th>Credit Limit (₹)</th>
-                <th>Available Limit (₹)</th>
-                <th>Outstanding Balance (₹)</th>
+                <th>Credit Limit</th>
+                <th>Available Limit</th>
+                <th>Outstanding Balance</th>
                 <th>Expenses</th>
                 <th>Actions</th>
             </tr>
@@ -46,32 +46,60 @@
                     <td>₹{{ card.available_limit }}</td>
                     <td>₹{{ card.outstanding }}</td>
                     <td>
-                        <ul class="list-unstyled mb-0">
-                            {% for expense in credit_card_expenses[card.id] %}
-                                <li>
-                                    <span class="font-weight-bold">{{ expense.date }}:</span> {{ expense.description }} - ₹{{ expense.amount }}
-                                </li>
-                            {% else %}
-                                <li>No expenses recorded.</li>
-                            {% endfor %}
-                        </ul>
+                        <button class="btn btn-info btn-sm rounded-circle" data-toggle="modal" data-target="#expensesModal-{{ card.id }}" title="Show Expenses">
+                            <i class="fas fa-eye"></i>
+                        </button>
                     </td>
                     <td>
                         <!-- Form to reset outstanding balance -->
                         <form method="POST" action="{{ url_for('add_credit_card') }}" style="display:inline;" onsubmit="return confirmResetOutstanding();">
                             {{ form.hidden_tag() }}
                             <input type="hidden" name="reset_outstanding" value="{{ card.id }}">
-                            <button type="submit" class="btn btn-warning btn-sm">Reset Outstanding</button>
+                            <button type="submit" class="btn btn-warning btn-sm rounded-circle shadow-sm" title="Reset Outstanding">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
                         </form>
                         
                         <!-- Form to delete the credit card -->
                         <form method="POST" action="{{ url_for('add_credit_card') }}" style="display:inline;" onsubmit="return confirmDeleteCard();">
                             {{ form.hidden_tag() }}
                             <input type="hidden" name="delete_credit_card" value="{{ card.id }}">
-                            <button type="submit" class="btn btn-danger btn-sm">Delete Card</button>
+                            <button type="submit" class="btn btn-danger btn-sm rounded-circle shadow-sm" title="Delete Card">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
                         </form>
                     </td>
                 </tr>
+                
+                <!-- Modal for displaying expenses -->
+                <div class="modal fade" id="expensesModal-{{ card.id }}" tabindex="-1" role="dialog" aria-labelledby="expensesModalLabel-{{ card.id }}" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="expensesModalLabel-{{ card.id }}">Expenses for {{ card.name }}</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <ul class="list-unstyled mb-0">
+                                    {% if credit_card_expenses[card.id] %}
+                                        {% for expense in credit_card_expenses[card.id] %}
+                                            <li>
+                                                <span class="font-weight-bold">{{ expense.date }}:</span> {{ expense.description }} - ₹{{ expense.amount }}
+                                            </li>
+                                        {% endfor %}
+                                    {% else %}
+                                        <li>No expenses recorded.</li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             {% endfor %}
         </tbody>
     </table>

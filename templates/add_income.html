@@ -54,7 +54,8 @@
                         <td>
                         <form method="POST" action="{{ url_for('add_income') }}" onsubmit="return confirm('Are you sure you want to delete this income?');">
                             <input type="hidden" name="delete_income" value="{{ income.id }}">
-                            <button type="submit" class="btn btn-danger">Delete</button>
+                            <button type="submit" class="btn btn-danger btn-sm rounded-circle shadow-sm" title="Delete Entries">
+                                <i class="fas fa-trash-alt"></i>
                         </form>
                         </td>
                     </tr>
