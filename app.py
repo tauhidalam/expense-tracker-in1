@@ -51,6 +51,7 @@ class Expense(db.Model):
     credit_card_name = db.Column(db.String(150), nullable=True)
     fund_id = db.Column(db.Integer, db.ForeignKey('fund.id'), nullable=True)
 
+
 class Income(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -497,7 +498,6 @@ def add_income():
     # Fetch recent income entries for the current user
     recent_incomes = Income.query.filter_by(user_id=user_id).order_by(Income.date.desc()).limit(10).all()
     return render_template('add_income.html', form=form, recent_incomes=recent_incomes)
-
 @app.route('/add_credit_card', methods=['GET', 'POST'])
 @login_required
 def add_credit_card():
@@ -519,7 +519,7 @@ def add_credit_card():
         flash('Credit Card added successfully!', 'success')
         return redirect(url_for('add_credit_card'))
 
-    # Check for outstanding balance reset request
+    # Handle reset outstanding balance request
     if request.method == 'POST' and 'reset_outstanding' in request.form:
         card_id = int(request.form['reset_outstanding'])
         credit_card = CreditCard.query.get(card_id)
@@ -531,13 +531,22 @@ def add_credit_card():
             flash('Outstanding balance reset successfully!', 'success')
             return redirect(url_for('add_credit_card'))
 
+    # Handle delete credit card request
+    if request.method == 'POST' and 'delete_credit_card' in request.form:
+        card_id = int(request.form['delete_credit_card'])
+        credit_card = CreditCard.query.get(card_id)
+        if credit_card:
+            db.session.delete(credit_card)
+            db.session.commit()
+            flash('Credit Card deleted successfully!', 'success')
+            return redirect(url_for('add_credit_card'))
+
     # Fetch all credit cards for the current user
     credit_cards = CreditCard.query.filter_by(user_id=user_id).all()
 
     # Fetch all expenses for each credit card
     credit_card_expenses = {}
     for card in credit_cards:
-        # Ensure credit_card_name is cast to integer in the query
         credit_card_expenses[card.id] = Expense.query.filter(
             Expense.user_id == user_id,
             Expense.credit_card_name.cast(Integer) == card.id

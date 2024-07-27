@@ -39,22 +39,26 @@
             </tr>
         </thead>
         <tbody>
-            {% for card in credit_cards %}
-                <tr>
-                    <td>{{ card.name }}</td>
-                    <td>₹{{ card.credit_limit }}</td>
-                    <td>₹{{ card.available_limit }}</td>
-                    <td>₹{{ card.outstanding }}</td>
-                    <td>
-                        <ul class="list-unstyled mb-0">
-                            {% for expense in credit_card_expenses[card.id] %}
-                                <li>
-                                    <span class="font-weight-bold">{{ expense.date }}:</span> {{ expense.description }} - ₹{{ expense.amount }}
-                                </li>
-                            {% else %}
-                                <li>No expenses recorded.</li>
-                            {% endfor %}
-                        </ul>
+            {% for credit_card in credit_cards %}
+            <div class="card">
+                <h4>{{ credit_card.name }}</h4>
+                <p>Credit Limit: {{ credit_card.credit_limit }}</p>
+                <p>Available Limit: {{ credit_card.available_limit }}</p>
+                <p>Outstanding Balance: {{ credit_card.outstanding }}</p>
+        
+                <!-- Form for resetting outstanding balance -->
+                <form method="POST" action="">
+                    <input type="hidden" name="reset_outstanding" value="{{ credit_card.id }}">
+                    <button type="submit" class="btn btn-warning">Reset Outstanding</button>
+                </form>
+        
+                <!-- Form for deleting the credit card -->
+                <form method="POST" action="">
+                    <input type="hidden" name="delete_credit_card" value="{{ credit_card.id }}">
+                    <button type="submit" class="btn btn-danger">Delete Card</button>
+                </form>
+            </div>
+        {% endfor %}                        </ul>
                     </td>
                     <td>
                         <!-- Form to reset outstanding balance -->
