@@ -20,8 +20,8 @@ import pandas as pd
 from flask_migrate import Migrate
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your_secret_key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://u9mrvousi957mn:p0743d39b1fb3a92393e5eb359ffdb99f06bf19b71326e622fba7c70c87be0a5f@c8lj070d5ubs83.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/d4qrbgm8ikf5mm'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
