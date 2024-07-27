@@ -22,19 +22,17 @@
         </div>
         
         <div class="form-group">
-            {{ form.submit(class="btn btn-primary btn-lg") }}
+            {{ form.submit(class="btn btn-primary") }}
         </div>
     </form>
 
     <h2 class="mt-5">Existing Credit Cards & Transactions</h2>
     <table class="table table-striped mt-3">
-        <thead class="thead-dark">
+        <thead>
             <tr>
                 <th>Name</th>
-                <th>Credit Limit</th>
                 <th>Available Limit</th>
                 <th>Outstanding Balance</th>
-                <th>Expenses</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -42,67 +40,136 @@
             {% for card in credit_cards %}
                 <tr>
                     <td>{{ card.name }}</td>
-                    <td>₹{{ card.credit_limit }}</td>
                     <td>₹{{ card.available_limit }}</td>
                     <td>₹{{ card.outstanding }}</td>
+
                     <td>
-                        <button class="btn btn-info btn-sm rounded-circle" data-toggle="modal" data-target="#expensesModal-{{ card.id }}" title="Show Expenses">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </td>
-                    <td>
-                        <!-- Form to reset outstanding balance -->
-                        <form method="POST" action="{{ url_for('add_credit_card') }}" style="display:inline;" onsubmit="return confirmResetOutstanding();">
-                            {{ form.hidden_tag() }}
-                            <input type="hidden" name="reset_outstanding" value="{{ card.id }}">
-                            <button type="submit" class="btn btn-warning btn-sm rounded-circle shadow-sm" title="Reset Outstanding">
-                                <i class="fas fa-sync-alt"></i>
-                            </button>
-                        </form>
-                        
-                        <!-- Form to delete the credit card -->
-                        <form method="POST" action="{{ url_for('add_credit_card') }}" style="display:inline;" onsubmit="return confirmDeleteCard();">
-                            {{ form.hidden_tag() }}
-                            <input type="hidden" name="delete_credit_card" value="{{ card.id }}">
-                            <button type="submit" class="btn btn-danger btn-sm rounded-circle shadow-sm" title="Delete Card">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-                
-                <!-- Modal for displaying expenses -->
-                <div class="modal fade" id="expensesModal-{{ card.id }}" tabindex="-1" role="dialog" aria-labelledby="expensesModalLabel-{{ card.id }}" aria-hidden="true">
-                    <div class="modal-dialog" role="document">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="expensesModalLabel-{{ card.id }}">Expenses for {{ card.name }}</h5>
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                            <div class="modal-body">
-                                <ul class="list-unstyled mb-0">
-                                    {% if credit_card_expenses[card.id] %}
-                                        {% for expense in credit_card_expenses[card.id] %}
-                                            <li>
-                                                <span class="font-weight-bold">{{ expense.date }}:</span> {{ expense.description }} - ₹{{ expense.amount }}
-                                            </li>
-                                        {% endfor %}
-                                    {% else %}
-                                        <li>No expenses recorded.</li>
-                                    {% endif %}
-                                </ul>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                            </div>
-                        </div>
-                    </div>
+ <!-- Button to trigger modal -->
+ <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#cardDetailsModal{{ card.id }}">
+    <i class="fas fa-eye"></i>
+</button>
+<!-- Modal -->
+  <!-- Modal -->
+  <div class="modal fade" id="cardDetailsModal{{ card.id }}" tabindex="-1" role="dialog" aria-labelledby="cardDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content card-modal">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cardDetailsModalLabel">{{ card.name }}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="card-details">
+                    <p><strong>Credit Limit:</strong> ₹{{ card.credit_limit }}</p>
+                    <p><strong>Available Limit:</strong> ₹{{ card.available_limit }}</p>
+                    <p><strong>Outstanding Balance:</strong> ₹{{ card.outstanding }}</p>
+                    <h5>Expenses:</h5>
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Amount (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for expense in credit_card_expenses[card.id] %}
+                                <tr>
+                                    <td>{{ expense.date }}</td>
+                                    <td>{{ expense.description }}</td>
+                                    <td>₹{{ expense.amount }}</td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="3">No expenses recorded.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
-            {% endfor %}
-        </tbody>
-    </table>
+            </div>
+            <div class="modal-footer">
+                <form method="POST" action="{{ url_for('add_credit_card') }}" style="display:inline;" onsubmit="return confirmResetOutstanding();">
+                    {{ form.hidden_tag() }}
+                    <input type="hidden" name="reset_outstanding" value="{{ card.id }}">
+                    <button type="submit" class="btn btn-warning"><i class="fas fa-sync-alt"></i> Reset Outstanding</button>
+                </form>
+                <form method="POST" action="{{ url_for('add_credit_card') }}" style="display:inline;" onsubmit="return confirmDeleteCard();">
+                    {{ form.hidden_tag() }}
+                    <input type="hidden" name="delete_credit_card" value="{{ card.id }}">
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-trash-alt"></i> Delete Card</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+<style>
+    .card-modal {
+    border-radius: 15px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    background: linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #ced4da;
+}
+
+.card-modal .modal-header {
+    border-bottom: none;
+    border-radius: 15px;
+    background: #007bff;
+    color: white;
+}
+
+.card-modal .modal-body {
+    padding: 20px;
+}
+
+.card-modal .modal-footer {
+    border-top: none;
+    padding: 10px;
+}
+
+.card-details {
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    padding: 20px;
+    background: white;
+}
+
+.card-details p, .card-details ul {
+    margin: 0;
+    padding: 0;
+}
+
+.card-details ul {
+    list-style-type: none;
+}
+
+.card-details li {
+    padding: 5px 0;
+}
+
+.card-details .font-weight-bold {
+    font-weight: bold;
+}
+
+.modal-dialog {
+    max-width: 100%;
+    margin: 10px;
+}
+
+@media (max-width: 576px) {
+    .card-details {
+        font-size: 14px;
+    }
+}
+
+
+    </style>
 
     <script>
         function confirmResetOutstanding() {
