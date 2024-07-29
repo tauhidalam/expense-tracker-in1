@@ -245,7 +245,8 @@ def generate_pie_chart(data, labels, title):
 @login_required
 def dashboard():
     user = current_user
-    expenses = Expense.query.filter_by(user_id=user.id).order_by(Expense.date.desc()).limit(10).all()
+    expenses = Expense.query.filter_by(user_id=user.id).order_by(Expense.date.desc()).all()
+    recent_expenses = Expense.query.filter_by(user_id=user.id).order_by(Expense.date.desc()).limit(10).all()
     funds = Fund.query.filter_by(user_id=user.id).all()
     credit_cards = CreditCard.query.filter_by(user_id=user.id).all()
     incomes = Income.query.filter_by(user_id=user.id).all()
@@ -267,7 +268,6 @@ def dashboard():
         if expense.date.month == current_month and expense.date.year == current_year
         and expense.spend_source in ['Cash', 'Online/UPI', 'Cashback']
     )
-
     # Calculate total funds for the current month
     total_funds = sum(
         fund.amount for fund in funds
@@ -297,7 +297,7 @@ def dashboard():
         outstanding_color = 'green'
 
     # Render the dashboard without plots
-    return render_template('dashboard.html', expenses=expenses, funds=funds, credit_cards=credit_cards, 
+    return render_template('dashboard.html', expenses=recent_expenses, funds=funds, credit_cards=credit_cards, 
                            total_available=total_available, balance_color=balance_color,
                            total_outstanding=total_outstanding, outstanding_color=outstanding_color)
 
