@@ -435,24 +435,25 @@ def view_expenses():
         expenses = Expense.query.filter_by(user_id=user_id).filter(
             Expense.date.between(start_date, end_date)
         ).order_by(Expense.date.desc()).all()
-
-    # Handle delete request
+    # Delete Expense logic starts from here
     if request.method == 'POST' and 'delete_expense' in request.form:
         expense_id = int(request.form['delete_expense'])
         expense = Expense.query.get(expense_id)
         if expense and expense.user_id == user_id:
             # Revert changes to related models if necessary
             if expense.credit_card_name:
-                credit_card = CreditCard.query.filter_by(name=expense.credit_card_name, user_id=user_id).first()
+                credit_card = CreditCard.query.filter_by(id=expense.credit_card_name, user_id=user_id).first()
                 if credit_card:
+                   
                     credit_card.available_limit += expense.amount
-                    credit_card.outstanding -=expense.amount
+                    credit_card.outstanding -= expense.amount
                     db.session.add(credit_card)
 
-            if expense.spend_source == 'fund':
-                fund = Fund.query.filter_by(name=expense.fund_name, user_id=user_id).first()
+            if expense.spend_source == 'Funds' and expense.fund_id:
+                fund = Fund.query.filter_by(id=expense.fund_id, user_id=user_id).first()
                 if fund:
                     fund.amount += expense.amount
+                    
                     db.session.add(fund)
 
             db.session.delete(expense)
