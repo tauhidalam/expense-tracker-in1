@@ -446,6 +446,7 @@ def view_expenses():
                 credit_card = CreditCard.query.filter_by(name=expense.credit_card_name, user_id=user_id).first()
                 if credit_card:
                     credit_card.available_limit += expense.amount
+                    credit_card.outstanding -=expense.amount
                     db.session.add(credit_card)
 
             if expense.spend_source == 'fund':
