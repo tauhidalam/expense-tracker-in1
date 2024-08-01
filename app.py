@@ -154,6 +154,8 @@ class SortingForm(FlaskForm):
 class FilterForm(FlaskForm):
     month = SelectField('Month', choices=[(i, f'{i:02d}') for i in range(1, 13)], coerce=int, default=datetime.now().month)
     year = IntegerField('Year', default=datetime.now().year)
+    category = SelectField('Category', choices=[('', 'All Categories'),('Home','Home'),('Self','Self'),('Debt','Debt'),('Others','Others')])
+    spend_source = SelectField('Spend Source', choices=[('', 'All Sources'), ('Cash', 'Cash'), ('Online/UPI', 'Online/UPI'), ('Cashback', 'Cashback'), ('Credit Card', 'Credit Card'), ('Funds', 'Funds')])
     submit = SubmitField('Filter')
 
 
@@ -408,17 +410,25 @@ def view_expenses():
     filter_form = FilterForm()
 
     user_id = current_user.id
-    sort_order = 'desc'  # Default sorting order
+
+    # Default values
+    sort_order = 'desc'
+    sort_by = 'date'
     month = datetime.now().month
     year = datetime.now().year
+    selected_category = ''
+    selected_spend_source = ''
 
     # Handle form submissions
     if sort_form.validate_on_submit():
         sort_order = sort_form.sort_order.data
+        sort_by = sort_form.sort_by.data
 
     if filter_form.validate_on_submit():
-        month = filter_form.month.data
-        year = filter_form.year.data
+        month = int(filter_form.month.data)
+        year = int(filter_form.year.data)
+        selected_category = filter_form.category.data
+        selected_spend_source = filter_form.spend_source.data
 
     # Query expenses based on filters and sorting
     start_date = datetime(year, month, 1)
@@ -427,24 +437,31 @@ def view_expenses():
     else:
         end_date = datetime(year, month + 1, 1)
 
-    if sort_order == 'asc':
-        expenses = Expense.query.filter_by(user_id=user_id).filter(
-            Expense.date.between(start_date, end_date)
-        ).order_by(Expense.date.asc()).all()
-    else:
-        expenses = Expense.query.filter_by(user_id=user_id).filter(
-            Expense.date.between(start_date, end_date)
-        ).order_by(Expense.date.desc()).all()
-    # Delete Expense logic starts from here
+    query = Expense.query.filter_by(user_id=user_id).filter(
+        Expense.date.between(start_date, end_date)
+    )
+
+    if selected_category:
+        query = query.filter_by(category=selected_category)
+
+    if selected_spend_source:
+        query = query.filter_by(spend_source=selected_spend_source)
+
+    if sort_by == 'amount':
+        query = query.order_by(Expense.amount.asc() if sort_order == 'asc' else Expense.amount.desc())
+    else:  # Default sort by date
+        query = query.order_by(Expense.date.asc() if sort_order == 'asc' else Expense.date.desc())
+
+    expenses = query.all()
+
+    # Delete Expense logic starts here
     if request.method == 'POST' and 'delete_expense' in request.form:
         expense_id = int(request.form['delete_expense'])
         expense = Expense.query.get(expense_id)
         if expense and expense.user_id == user_id:
-            # Revert changes to related models if necessary
             if expense.credit_card_name:
                 credit_card = CreditCard.query.filter_by(id=expense.credit_card_name, user_id=user_id).first()
                 if credit_card:
-                   
                     credit_card.available_limit += expense.amount
                     credit_card.outstanding -= expense.amount
                     db.session.add(credit_card)
@@ -453,7 +470,6 @@ def view_expenses():
                 fund = Fund.query.filter_by(id=expense.fund_id, user_id=user_id).first()
                 if fund:
                     fund.amount += expense.amount
-                    
                     db.session.add(fund)
 
             db.session.delete(expense)
@@ -465,9 +481,9 @@ def view_expenses():
         'view_expenses.html',
         expenses=expenses,
         sort_form=sort_form,
-        filter_form=filter_form
+        filter_form=filter_form,
+        total_expense=sum(expense.amount for expense in expenses)
     )
-
 
 @app.route('/add_income', methods=['GET', 'POST'])
 @login_required
@@ -707,7 +723,9 @@ def model_to_dict(model_instance):
         'date': model_instance.date.strftime('%Y-%m-%d'),
         'description': model_instance.description,
         'amount': model_instance.amount,
-        'spend_source': model_instance.spend_source
+        'spend_source': model_instance.spend_source,
+        'category': model_instance.category
+        
     }
 
 #plots and graphs
