@@ -402,28 +402,24 @@ def add_expense():
 
     return render_template('add_expense.html', form=form)
 
+
 @app.route('/view_expenses', methods=['GET', 'POST'])
 @login_required
 def view_expenses():
     # Instantiate forms
-    sort_form = SortingForm()
     filter_form = FilterForm()
 
     user_id = current_user.id
 
     # Default values
-    sort_order = 'desc'
-    sort_by = 'date'
-    month = datetime.now().month
-    year = datetime.now().year
-    selected_category = ''
-    selected_spend_source = ''
+    sort_order = request.args.get('sort_order', 'desc')
+    sort_by = request.args.get('sort_by', 'date')
+    month = int(request.args.get('month', datetime.now().month))
+    year = int(request.args.get('year', datetime.now().year))
+    selected_category = request.args.get('category', '')
+    selected_spend_source = request.args.get('spend_source', '')
 
     # Handle form submissions
-    if sort_form.validate_on_submit():
-        sort_order = sort_form.sort_order.data
-        sort_by = sort_form.sort_by.data
-
     if filter_form.validate_on_submit():
         month = int(filter_form.month.data)
         year = int(filter_form.year.data)
@@ -475,13 +471,20 @@ def view_expenses():
             db.session.delete(expense)
             db.session.commit()
             flash('Expense deleted successfully!', 'success')
-            return redirect(url_for('view_expenses'))
+            return redirect(url_for('view_expenses', sort_by=sort_by, sort_order=sort_order, month=month, year=year, category=selected_category, spend_source=selected_spend_source))
+
+    # Populate filter form with current values
+    filter_form.month.data = month
+    filter_form.year.data = year
+    filter_form.category.data = selected_category
+    filter_form.spend_source.data = selected_spend_source
 
     return render_template(
         'view_expenses.html',
         expenses=expenses,
-        sort_form=sort_form,
         filter_form=filter_form,
+        sort_by=sort_by,
+        sort_order=sort_order,
         total_expense=sum(expense.amount for expense in expenses)
     )
 

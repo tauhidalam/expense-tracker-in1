@@ -13,14 +13,27 @@
     <button type="submit" class="btn btn-primary mt-3">Filter</button>
 </form>
 
+<!-- Display the total expense amount -->
+<div class="total-expense mt-4 mb-4 p-3 text-white bg-primary rounded">
+    <h3>Total Expense: {{ total_expense }}</h3>
+</div>
+
 <!-- Table to display expenses with dynamic sorting -->
 <table class="table mt-4">
     <thead>
         <tr>
-            <th><a href="{{ url_for('view_expenses', sort_by='date', sort_order='asc' if sort_by != 'date' or sort_order == 'desc' else 'desc', month=filter_form.month.data, year=filter_form.year.data, category=filter_form.category.data, spend_source=filter_form.spend_source.data) }}">Date</a></th>
+            <th>
+                <a href="{{ url_for('view_expenses', sort_by='date', sort_order='asc' if sort_by != 'date' or sort_order == 'desc' else 'desc', month=filter_form.month.data, year=filter_form.year.data, category=filter_form.category.data, spend_source=filter_form.spend_source.data) }}">
+                    Date
+                </a>
+            </th>
             <th>Category</th>
             <th>Description</th>
-            <th><a href="{{ url_for('view_expenses', sort_by='amount', sort_order='asc' if sort_by != 'amount' or sort_order == 'desc' else 'desc', month=filter_form.month.data, year=filter_form.year.data, category=filter_form.category.data, spend_source=filter_form.spend_source.data) }}">Amount</a></th>
+            <th>
+                <a href="{{ url_for('view_expenses', sort_by='amount', sort_order='asc' if sort_by != 'amount' or sort_order == 'desc' else 'desc', month=filter_form.month.data, year=filter_form.year.data, category=filter_form.category.data, spend_source=filter_form.spend_source.data) }}">
+                    Amount
+                </a>
+            </th>
             <th>Spend Source</th>
             <th>Action</th>
         </tr>
@@ -34,7 +47,7 @@
             <td>{{ expense.amount }}</td>
             <td>{{ expense.spend_source }}</td>
             <td>
-                <form method="POST" action="{{ url_for('view_expenses') }}" onsubmit="return confirm('Are you sure you want to delete this expense?');">
+                <form method="POST" action="{{ url_for('view_expenses', sort_by=sort_by, sort_order=sort_order, month=filter_form.month.data, year=filter_form.year.data, category=filter_form.category.data, spend_source=filter_form.spend_source.data) }}" onsubmit="return confirm('Are you sure you want to delete this expense?');">
                     <input type="hidden" name="delete_expense" value="{{ expense.id }}">
                     <button type="submit" class="btn btn-danger btn-sm rounded-circle shadow-sm" title="Delete Entries">
                         <i class="fas fa-trash-alt"></i>
@@ -46,9 +59,10 @@
     </tbody>
 </table>
 
-<!-- Display the total expense amount -->
-<div>
-    <h3>Total Expense: {{ total_expense }}</h3>
-</div>
-
 {% endblock %}
+
+.total-expense {
+    font-size: 1.5em;
+    font-weight: bold;
+    text-align: center;
+}
