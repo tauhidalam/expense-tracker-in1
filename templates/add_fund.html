@@ -42,15 +42,21 @@
             </tr>
         </thead>
         <tbody>
-            {% for fund in user_funds %}
+            {% for fund in user_funds%}
             <tr>
                 <td>{{ fund.fund_type }}</td>
                 <td>₹{{ fund.amount }}</td>
                 <td>{{ fund.allocation_date.strftime('%Y-%m-%d') }}</td>
                 <td>
-                    <form method="POST" action="">
+                    <!-- Reset Fund Button -->
+                    <form method="POST" action="" style="display:inline-block;">
                         <input type="hidden" name="reset_fund" value="{{ fund.id }}">
-                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to reset this fund?');">Reset Fund</button>
+                        <button type="submit" class="btn btn-warning btn-sm" onclick="return confirm('Are you sure you want to reset this fund?');">Reset</button>
+                    </form>
+                    <!-- Delete Fund Button -->
+                    <form method="POST" action="" style="display:inline-block;">
+                        <input type="hidden" name="delete_fund" value="{{ fund.id }}">
+                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this fund?');"> <i class="fas fa-trash-alt"></i></button>
                     </form>
                 </td>
             </tr>

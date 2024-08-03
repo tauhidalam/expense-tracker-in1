@@ -75,24 +75,53 @@
         <thead>
             <tr>
                 <th>Fund Type</th>
+                <th>Total Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if consolidated_funds %}
+                {% for fund_type, amount in consolidated_funds.items() %}
+                    {% if amount > 0 %}
+                    <tr>
+                        <td>{{ fund_type }}</td>
+                        <td>₹{{ amount }}</td>
+                    </tr>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="2" class="text-center">No funds available</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+    
+    <h4 class="mt-4">Fund Details (Current Month)</h4>
+    <table class="table table-bordered mt-3">
+        <thead>
+            <tr>
+                <th>Fund Type</th>
                 <th>Amount</th>
                 <th>Allocation Date</th>
             </tr>
         </thead>
         <tbody>
             {% for fund in funds %}
-            <tr>
-                <td>{{ fund.fund_type }}</td>
-                <td>₹{{ fund.amount }}</td>
-                <td>{{ fund.allocation_date.strftime('%Y-%m-%d') }}</td>
-            </tr>
+                {% if fund.amount > 0 %}
+                <tr>
+                    <td>{{ fund.fund_type }}</td>
+                    <td>₹{{ fund.amount }}</td>
+                    <td>{{ fund.allocation_date.strftime('%Y-%m-%d') }}</td>
+                </tr>
+                {% endif %}
             {% else %}
-            <tr>
-                <td colspan="3" class="text-center">No funds available</td>
-            </tr>
+                <tr>
+                    <td colspan="3" class="text-center">No funds available</td>
+                </tr>
             {% endfor %}
         </tbody>
     </table>
+            
 
     <!-- Button to generate plots -->
     <div class="mt-4">

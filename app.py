@@ -124,7 +124,7 @@ class ExpenseForm(FlaskForm):
     date = DateField('Date', format='%Y-%m-%d', default=datetime.today, validators=[DataRequired(),validate_current_month])
     description = StringField('Description', validators=[DataRequired(), Length(max=200)])
     amount = FloatField('Amount', validators=[DataRequired()])
-    category = SelectField('Category', choices=[('Home', 'Home'), ('Self', 'Self'), ('Debt', 'Debt'), ('Others', 'Others')])
+    category = SelectField('Category', choices=[('Home', 'Home'), ('Self', 'Self'), ('Debt given', 'Debt given'), ('Debt Repayment','Debt Repayment'),('Credit Card Repayment','Credit Card Repayment'),('Others', 'Others')])
     spend_source = SelectField('Spend Source', choices=[('Cash', 'Cash'), ('Online/UPI', 'Online/UPI'), ('Cashback', 'Cashback'), ('Credit Card', 'Credit Card'), ('Funds', 'Funds')])
     credit_card_name = SelectField('Credit Card Name', choices=[], validators=[Optional()])
     fund_id = SelectField('Fund', coerce=int, validators=[Optional()])
@@ -133,7 +133,7 @@ class ExpenseForm(FlaskForm):
 class IncomeForm(FlaskForm):
     date = DateField('Date', validators=[DataRequired(),validate_current_month])
     amount = FloatField('Amount', validators=[DataRequired()])
-    source = SelectField('Source of Income', choices=[('Salary', 'Salary'), ('Cashbacks', 'Cashbacks'), ('Others', 'Others')], validators=[DataRequired()])
+    source = SelectField('Source of Income', choices=[('Salary', 'Salary'), ('Cashbacks', 'Cashbacks'),('Rollovered amount','Rollovered amount'),('Debt repayed','Debt repayed'), ('Others', 'Others')], validators=[DataRequired()])
     submit = SubmitField('Add Income')
 
 class CreditCardForm(FlaskForm):
@@ -142,7 +142,7 @@ class CreditCardForm(FlaskForm):
     submit = SubmitField('Add Credit Card')
 
 class FundForm(FlaskForm):
-    allocation_date = DateField('Allocation Date', validators=[DataRequired(),validate_current_month])
+    allocation_date = DateField('Allocation Date', validators=[DataRequired()])
     amount = FloatField('Amount', validators=[DataRequired()])
     fund_type = SelectField('Fund Type', choices=[('Savings', 'Savings'), ('Emergency Fund', 'Emergency Fund'), ('Repairing Fund', 'Repairing Fund'), ('Others', 'Others')])
     submit = SubmitField('Add Fund')
@@ -271,12 +271,26 @@ def dashboard():
         and expense.spend_source in ['Cash', 'Online/UPI', 'Cashback']
     )
     # Calculate total funds for the current month
-    total_funds = sum(
-        fund.amount for fund in funds
-        if fund.allocation_date.month == current_month and fund.allocation_date.year == current_year
-    )
+    # Consolidate funds by type
+    current_month_funds = [fund for fund in funds if fund.allocation_date.month == current_month and fund.allocation_date.year == current_year]
 
-    # Calculate total available amount
+    # Consolidate fund amounts by fund type
+    consolidated_funds = {}
+    for fund in funds:
+        if fund.fund_type in consolidated_funds:
+            consolidated_funds[fund.fund_type] += fund.amount
+        else:
+            consolidated_funds[fund.fund_type] = fund.amount
+
+    # Calculate current month funds to calculate available amount for current month
+        consolidated_current_month_funds = {}
+    for fund in current_month_funds:
+        if fund.fund_type in consolidated_current_month_funds:
+            consolidated_current_month_funds[fund.fund_type] += fund.amount
+        else:
+            consolidated_current_month_funds[fund.fund_type] = fund.amount
+    # Calculate total available amount (excluding consolidated fund amounts)
+    total_funds = sum(consolidated_current_month_funds.values())
     total_available = total_income - total_expenses - total_funds
 
     # Determine the background color based on the balance
@@ -299,9 +313,10 @@ def dashboard():
         outstanding_color = 'green'
 
     # Render the dashboard without plots
-    return render_template('dashboard.html', expenses=recent_expenses, funds=funds, credit_cards=credit_cards, 
+    return render_template('dashboard.html', expenses=recent_expenses, funds=current_month_funds, credit_cards=credit_cards, 
                            total_available=total_available, balance_color=balance_color,
-                           total_outstanding=total_outstanding, outstanding_color=outstanding_color)
+                           total_outstanding=total_outstanding, outstanding_color=outstanding_color,consolidated_funds=consolidated_funds)
+
 
 @app.route('/generate_plots', methods=['POST'])
 @login_required
@@ -519,6 +534,8 @@ def add_income():
     # Fetch recent income entries for the current user
     recent_incomes = Income.query.filter_by(user_id=user_id).order_by(Income.date.desc()).limit(10).all()
     return render_template('add_income.html', form=form, recent_incomes=recent_incomes)
+
+
 @app.route('/add_credit_card', methods=['GET', 'POST'])
 @login_required
 def add_credit_card():
@@ -575,6 +592,7 @@ def add_credit_card():
 
     return render_template('add_credit_card.html', form=form, credit_cards=credit_cards, credit_card_expenses=credit_card_expenses)
 
+
 @app.route('/add_fund', methods=['GET', 'POST'])
 @login_required
 def add_fund():
@@ -600,28 +618,21 @@ def add_fund():
         if available_balance < amount:
             flash('Insufficient balance to add fund.', 'danger')
         else:
-            # Check if a fund of the same type already exists
-            existing_fund = Fund.query.filter_by(user_id=user_id, fund_type=fund_type).first()
-            if existing_fund:
-                # Update the existing fund's amount and allocation date
-                existing_fund.amount += amount
-                existing_fund.allocation_date = allocation_date
-            else:
-                # Create a new fund
-                fund = Fund(
-                    user_id=user_id,
-                    allocation_date=allocation_date,
-                    amount=amount,
-                    fund_type=fund_type
-                )
-                db.session.add(fund)
+            # Create a new fund entry for each addition
+            fund = Fund(
+                user_id=user_id,
+                allocation_date=allocation_date,
+                amount=amount,
+                fund_type=fund_type
+            )
+            db.session.add(fund)
 
             # Deduct the fund amount from the available balance
             available_balance -= amount
 
             # Commit the transaction
             db.session.commit()
-            flash('Fund added/updated successfully!', 'success')
+            flash('Fund added successfully!', 'success')
             return redirect(url_for('add_fund'))
 
     # Handle reset requests
@@ -634,6 +645,19 @@ def add_fund():
             db.session.commit()
             flash('Fund amount reset successfully!', 'success')
             return redirect(url_for('add_fund'))
+
+    # Handle delete requests
+    if request.method == 'POST' and 'delete_fund' in request.form:
+        fund_id = int(request.form['delete_fund'])
+        fund = Fund.query.get(fund_id)
+        if fund:
+            db.session.delete(fund)
+            db.session.commit()
+            flash('Fund deleted successfully!', 'success')
+            return redirect(url_for('add_fund'))
+
+    # Filter out funds with 0 amount for display
+    user_funds = [fund for fund in user_funds if fund.amount > 0]
 
     return render_template('add_fund.html', form=form, user_funds=user_funds)
 
