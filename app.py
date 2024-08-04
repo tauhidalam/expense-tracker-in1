@@ -154,7 +154,7 @@ class SortingForm(FlaskForm):
 class FilterForm(FlaskForm):
     month = SelectField('Month', choices=[(i, f'{i:02d}') for i in range(1, 13)], coerce=int, default=datetime.now().month)
     year = IntegerField('Year', default=datetime.now().year)
-    category = SelectField('Category', choices=[('', 'All Categories'),('Home','Home'),('Self','Self'),('Debt','Debt'),('Others','Others')])
+    category = SelectField('Category', choices=[('', 'All Categories'),('Home', 'Home'), ('Self', 'Self'), ('Debt given', 'Debt given'), ('Debt Repayment','Debt Repayment'),('Credit Card Repayment','Credit Card Repayment'),('Others', 'Others')])
     spend_source = SelectField('Spend Source', choices=[('', 'All Sources'), ('Cash', 'Cash'), ('Online/UPI', 'Online/UPI'), ('Cashback', 'Cashback'), ('Credit Card', 'Credit Card'), ('Funds', 'Funds')])
     submit = SubmitField('Filter')
 
