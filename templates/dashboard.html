@@ -14,6 +14,10 @@
          style="background-color: {{ outstanding_color }}; color: white;">
         <strong>Total Credit Card Outstanding: ₹{{ total_outstanding }}</strong>
     </div>
+    <div class="alert mt-4" 
+    style="background-color: {{ due_color }}; color: white;">
+   <strong>Total Due: ₹{{ total_due }}</strong>
+</div>
 
     <!-- Display recent expenses -->
     <h3 class="mt-4">Recent Expenses</h3>
@@ -47,19 +51,19 @@
     <table class="table table-bordered mt-3">
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Credit Limit</th>
-                <th>Available Limit</th>
+                <th>Card</th>
                 <th>Outstanding</th>
+                <th>Due Amount</th>
+                <th>Due Date</th>
             </tr>
         </thead>
         <tbody>
             {% for card in credit_cards %}
             <tr>
                 <td>{{ card.name }}</td>
-                <td>₹{{ card.credit_limit }}</td>
-                <td>₹{{ card.available_limit }}</td>
                 <td>₹{{ card.outstanding }}</td>
+                <td>₹{{ card.due_amount }}</td>
+                <td>{{ card.due_date}}</td>
             </tr>
             {% else %}
             <tr>

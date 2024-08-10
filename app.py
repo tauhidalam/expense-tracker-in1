@@ -65,7 +65,9 @@ class CreditCard(db.Model):
     name = db.Column(db.String(150), nullable=False)
     credit_limit = db.Column(db.Float, nullable=False)
     available_limit = db.Column(db.Float, nullable=False)  # Existing field
-    outstanding = db.Column(db.Float, nullable=False, default=0.0)  # New field
+    outstanding = db.Column(db.Float, nullable=False, default=0.0)  # Existing field
+    due_amount = db.Column(db.Float, nullable=True, default=0.0)  # New field
+    due_date = db.Column(db.Date, nullable=True)  # New field
 
 class Fund(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -270,6 +272,13 @@ def dashboard():
         if expense.date.month == current_month and expense.date.year == current_year
         and expense.spend_source in ['Cash', 'Online/UPI', 'Cashback']
     )
+    total_due = sum(card.due_amount for card in credit_cards)
+    if total_due > 45000:
+        due_color = 'darkred'
+    elif total_due > 20000:
+        due_color = 'lightcoral'
+    else:
+        due_color = 'green'
     # Calculate total funds for the current month
     # Consolidate funds by type
     current_month_funds = [fund for fund in funds if fund.allocation_date.month == current_month and fund.allocation_date.year == current_year]
@@ -283,7 +292,7 @@ def dashboard():
             consolidated_funds[fund.fund_type] = fund.amount
 
     # Calculate current month funds to calculate available amount for current month
-        consolidated_current_month_funds = {}
+    consolidated_current_month_funds = {}
     for fund in current_month_funds:
         if fund.fund_type in consolidated_current_month_funds:
             consolidated_current_month_funds[fund.fund_type] += fund.amount
@@ -312,10 +321,12 @@ def dashboard():
     else:
         outstanding_color = 'green'
 
+    
+
     # Render the dashboard without plots
     return render_template('dashboard.html', expenses=recent_expenses, funds=current_month_funds, credit_cards=credit_cards, 
                            total_available=total_available, balance_color=balance_color,
-                           total_outstanding=total_outstanding, outstanding_color=outstanding_color,consolidated_funds=consolidated_funds)
+                           total_outstanding=total_outstanding, outstanding_color=outstanding_color,consolidated_funds=consolidated_funds,total_due=total_due,due_color=due_color)
 
 
 @app.route('/generate_plots', methods=['POST'])
@@ -535,6 +546,7 @@ def add_income():
     recent_incomes = Income.query.filter_by(user_id=user_id).order_by(Income.date.desc()).limit(10).all()
     return render_template('add_income.html', form=form, recent_incomes=recent_incomes)
 
+from datetime import datetime
 
 @app.route('/add_credit_card', methods=['GET', 'POST'])
 @login_required
@@ -579,8 +591,47 @@ def add_credit_card():
             flash('Credit Card deleted successfully!', 'success')
             return redirect(url_for('add_credit_card'))
 
+    # Handle updating due amount and due date
+    if request.method == 'POST' and 'due_amount' in request.form and 'due_date' in request.form:
+        card_id = int(request.form['card_id'])
+        credit_card = CreditCard.query.get(card_id)
+        if credit_card:
+            credit_card.due_amount = float(request.form['due_amount'])
+            credit_card.due_date = datetime.strptime(request.form['due_date'], '%Y-%m-%d').date()
+            db.session.commit()
+            flash('Credit card due details updated successfully!', 'success')
+            return redirect(url_for('add_credit_card'))
+
     # Fetch all credit cards for the current user
     credit_cards = CreditCard.query.filter_by(user_id=user_id).all()
+
+    if request.method == 'POST' and 'pay_due' in request.form:
+        card_id = int(request.form['pay_due'])
+        credit_card = CreditCard.query.get(card_id)
+        if credit_card:
+            due_amount = credit_card.due_amount
+            due_date = credit_card.due_date
+
+            if due_amount and due_date:
+                # Reset due amount
+                credit_card.due_amount = 0.0
+                db.session.commit()
+
+                # Add expense entry
+                expense = Expense(
+                    user_id=user_id,
+                    credit_card_name=credit_card.name,
+                    date=datetime.now().date(),
+                    amount=due_amount,
+                    description=f'{credit_card.name} {datetime.now().strftime("%B %Y")} Due Paid',
+                    spend_source='Online/UPI',
+                    category='Credit Card Repayment'
+                )
+                db.session.add(expense)
+                db.session.commit()
+
+                flash('Due amount paid and expense recorded successfully!', 'success')
+                return redirect(url_for('add_credit_card')) 
 
     # Fetch all expenses for each credit card
     credit_card_expenses = {}
@@ -692,36 +743,40 @@ def export_report():
     return render_template('export_report.html', report_url=None)
 
     
-
 def generate_report(start_date, end_date, entry_type):
     user_id = current_user.id
-    
+
     # Fetch data based on entry_type and date range
+    expenses = []
+    incomes = []
+    funds = []
+    credit_cards = []
+
+    if entry_type == 'all' or entry_type == 'expenses':
+        expenses = Expense.query.filter_by(user_id=user_id).filter(Expense.date.between(start_date, end_date)).all()
+
+    if entry_type == 'all' or entry_type == 'incomes':
+        incomes = Income.query.filter_by(user_id=user_id).filter(Income.date.between(start_date, end_date)).all()
+
+    if entry_type == 'all' or entry_type == 'funds':
+        funds = Fund.query.filter_by(user_id=user_id).filter(Fund.allocation_date.between(start_date, end_date)).all()
+
     if entry_type == 'all':
-        expenses = Expense.query.filter_by(user_id=user_id).filter(Expense.date.between(start_date, end_date)).all()
-        incomes = Income.query.filter_by(user_id=user_id).filter(Income.date.between(start_date, end_date)).all()
-        funds = Fund.query.filter_by(user_id=user_id).filter(Fund.allocation_date.between(start_date, end_date)).all()
-    elif entry_type == 'expenses':
-        expenses = Expense.query.filter_by(user_id=user_id).filter(Expense.date.between(start_date, end_date)).all()
-        incomes = []
-        funds = []
-    elif entry_type == 'incomes':
-        incomes = Income.query.filter_by(user_id=user_id).filter(Income.date.between(start_date, end_date)).all()
-        expenses = []
-        funds = []
-    elif entry_type == 'funds':
-        funds = Fund.query.filter_by(user_id=user_id).filter(Fund.allocation_date.between(start_date, end_date)).all()
-        expenses = []
-        incomes = []
-    else:
-        return None
+        credit_cards = CreditCard.query.filter_by(user_id=user_id).all()
 
     # Create an Excel writer
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         # Add data to sheets
         if expenses:
-            df_expenses = pd.DataFrame([model_to_dict(e) for e in expenses])
+            df_expenses = pd.DataFrame([{
+                'date': e.date.strftime('%Y-%m-%d'),
+                'description': e.description,
+                'amount': e.amount,
+                'spend_source': e.spend_source,
+                'category': e.category,
+                'credit_card': CreditCard.query.get(e.credit_card_name).name if e.credit_card_name else None
+            } for e in expenses])
             df_expenses.to_excel(writer, sheet_name='Expenses', index=False)
 
         if incomes:
@@ -740,6 +795,16 @@ def generate_report(start_date, end_date, entry_type):
             } for f in funds])
             df_funds.to_excel(writer, sheet_name='Funds', index=False)
 
+        if credit_cards:
+            df_credit_cards = pd.DataFrame([{
+                'name': cc.name,
+                'limit': cc.credit_limit,
+                'available_limit': cc.available_limit,
+                'outstanding': cc.outstanding,
+                'due_date': cc.due_date.strftime('%Y-%m-%d') if cc.due_date else None
+            } for cc in credit_cards])
+            df_credit_cards.to_excel(writer, sheet_name='Credit Cards', index=False)
+
     # Reset the stream position to the beginning
     output.seek(0)
     
@@ -751,7 +816,8 @@ def model_to_dict(model_instance):
         'description': model_instance.description,
         'amount': model_instance.amount,
         'spend_source': model_instance.spend_source,
-        'category': model_instance.category
+        'category': model_instance.category,
+        'credit_card': model_instance.credit_card_name if model_instance.spend_source == 'Credit Card' else None
         
     }
 
