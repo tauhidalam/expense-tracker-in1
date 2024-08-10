@@ -97,7 +97,7 @@
                     <li class="nav-item"><a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">Dashboard</a></li>
                     <li class="nav-item"><a class="nav-link {% if request.endpoint == 'add_expense' %}active{% endif %}" href="{{ url_for('add_expense') }}">Add Expense</a></li>
                     <li class="nav-item"><a class="nav-link {% if request.endpoint == 'view_expenses' %}active{% endif %}" href="{{ url_for('view_expenses') }}">View Expenses</a></li>
-                    <li class="nav-item"><a class="nav-link {% if request.endpoint == 'add_income' %}active{% endif %}" href="{{ url_for('add_income') }}">Add Income</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.endpoint == 'add_income' %}active{% endif %}" href="{{ url_for('add_income') }}">Add/View Income</a></li>
                     <li class="nav-item"><a class="nav-link {% if request.endpoint == 'add_credit_card' %}active{% endif %}" href="{{ url_for('add_credit_card') }}">Add/View Credit Card</a></li>
                     <li class="nav-item"><a class="nav-link {% if request.endpoint == 'add_fund' %}active{% endif %}" href="{{ url_for('add_fund') }}">Add/View Fund</a></li>
                     <li class="nav-item"><a class="nav-link {% if request.endpoint == 'export_report' %}active{% endif %}" href="{{ url_for('export_report') }}">Export</a></li>

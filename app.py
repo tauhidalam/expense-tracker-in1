@@ -58,6 +58,7 @@ class Income(db.Model):
     date = db.Column(db.Date, nullable=False)
     amount = db.Column(db.Float, nullable=False)
     source = db.Column(db.String(150), nullable=False)
+    description = db.Column(db.String(150),nullable=True)
 
 class CreditCard(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -135,6 +136,7 @@ class ExpenseForm(FlaskForm):
 class IncomeForm(FlaskForm):
     date = DateField('Date', validators=[DataRequired(),validate_current_month])
     amount = FloatField('Amount', validators=[DataRequired()])
+    description = StringField('Description')
     source = SelectField('Source of Income', choices=[('Salary', 'Salary'), ('Cashbacks', 'Cashbacks'),('Rollovered amount','Rollovered amount'),('Debt repayed','Debt repayed'), ('Others', 'Others')], validators=[DataRequired()])
     submit = SubmitField('Add Income')
 
@@ -274,11 +276,11 @@ def dashboard():
     )
     total_due = sum(card.due_amount for card in credit_cards)
     if total_due > 45000:
-        due_color = 'darkred'
-    elif total_due > 20000:
-        due_color = 'lightcoral'
+        due_color = 'firebrick'
+    elif total_due > 5000:
+        due_color = 'coral'
     else:
-        due_color = 'green'
+        due_color = 'lightcoral'
     # Calculate total funds for the current month
     # Consolidate funds by type
     current_month_funds = [fund for fund in funds if fund.allocation_date.month == current_month and fund.allocation_date.year == current_year]
@@ -308,14 +310,14 @@ def dashboard():
     elif total_available > 5000:
         balance_color = 'lightcoral'
     else:
-        balance_color = 'darkred'
+        balance_color = 'firebrick'
 
     # Calculate total credit card outstanding
     total_outstanding = sum(card.outstanding for card in credit_cards)
 
     # Determine the background color based on the total outstanding balance
     if total_outstanding > 50000:
-        outstanding_color = 'darkred'
+        outstanding_color = 'firebrick'
     elif total_outstanding > 30000:
         outstanding_color = 'lightcoral'
     else:
@@ -524,6 +526,7 @@ def add_income():
         income = Income(
             user_id=user_id,
             date=form.date.data,
+            description=form.description.data,
             amount=form.amount.data,
             source=form.source.data
         )
