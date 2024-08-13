@@ -565,7 +565,8 @@ def add_credit_card():
             name=form.name.data,
             credit_limit=credit_limit,
             available_limit=credit_limit,  # Initialize available limit
-            outstanding=0.0  # Initialize outstanding balance
+            outstanding=0.0,  # Initialize outstanding balance
+            due_amount=0.0  # Initialize due amount
         )
         db.session.add(credit_card)
         db.session.commit()
@@ -577,9 +578,10 @@ def add_credit_card():
         card_id = int(request.form['reset_outstanding'])
         credit_card = CreditCard.query.get(card_id)
         if credit_card:
-            # Reset outstanding balance and update available limit
+            # Reset outstanding balance
             credit_card.outstanding = 0.0
-            credit_card.available_limit = credit_card.credit_limit
+            # Update available limit considering outstanding and due amount
+            credit_card.available_limit = credit_card.credit_limit - (credit_card.outstanding + credit_card.due_amount)
             db.session.commit()
             flash('Outstanding balance reset successfully!', 'success')
             return redirect(url_for('add_credit_card'))
@@ -601,6 +603,8 @@ def add_credit_card():
         if credit_card:
             credit_card.due_amount = float(request.form['due_amount'])
             credit_card.due_date = datetime.strptime(request.form['due_date'], '%Y-%m-%d').date()
+            # Update available limit considering outstanding and updated due amount
+            credit_card.available_limit = credit_card.credit_limit - (credit_card.outstanding + credit_card.due_amount)
             db.session.commit()
             flash('Credit card due details updated successfully!', 'success')
             return redirect(url_for('add_credit_card'))
@@ -608,6 +612,7 @@ def add_credit_card():
     # Fetch all credit cards for the current user
     credit_cards = CreditCard.query.filter_by(user_id=user_id).all()
 
+    # Handle paying due amount and recording as an expense
     if request.method == 'POST' and 'pay_due' in request.form:
         card_id = int(request.form['pay_due'])
         credit_card = CreditCard.query.get(card_id)
@@ -618,6 +623,8 @@ def add_credit_card():
             if due_amount and due_date:
                 # Reset due amount
                 credit_card.due_amount = 0.0
+                # Update available limit considering outstanding and reset due amount
+                credit_card.available_limit = credit_card.credit_limit - (credit_card.outstanding + credit_card.due_amount)
                 db.session.commit()
 
                 # Add expense entry
@@ -634,7 +641,7 @@ def add_credit_card():
                 db.session.commit()
 
                 flash('Due amount paid and expense recorded successfully!', 'success')
-                return redirect(url_for('add_credit_card')) 
+                return redirect(url_for('add_credit_card'))
 
     # Fetch all expenses for each credit card
     credit_card_expenses = {}
