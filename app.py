@@ -630,7 +630,6 @@ def add_credit_card():
                 # Add expense entry
                 expense = Expense(
                     user_id=user_id,
-                    credit_card_name=credit_card.name,
                     date=datetime.now().date(),
                     amount=due_amount,
                     description=f'{credit_card.name} {datetime.now().strftime("%B %Y")} Due Paid',
