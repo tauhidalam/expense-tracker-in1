@@ -1,3 +1,4 @@
+
 from flask import Flask, render_template, redirect, url_for, flash, session, request, send_file
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, DateField, FloatField, SelectField, SubmitField, IntegerField
@@ -648,7 +649,7 @@ def add_credit_card():
         credit_card_expenses[card.id] = Expense.query.filter(
             Expense.user_id == user_id,
             Expense.credit_card_name.cast(Integer) == card.id
-        ).all()
+        ).order_by(Expense.date.desc()).all()
 
     return render_template('add_credit_card.html', form=form, credit_cards=credit_cards, credit_card_expenses=credit_card_expenses)
 
