@@ -162,6 +162,7 @@ class FilterForm(FlaskForm):
     category = SelectField('Category', choices=[('', 'All Categories'),('Home', 'Home'), ('Self', 'Self'), ('Debt given', 'Debt given'), ('Debt Repayment','Debt Repayment'),('Credit Card Repayment','Credit Card Repayment'),('Others', 'Others')])
     spend_source = SelectField('Spend Source', choices=[('', 'All Sources'), ('Cash', 'Cash'), ('Online/UPI', 'Online/UPI'), ('Cashback', 'Cashback'), ('Credit Card', 'Credit Card'), ('Funds', 'Funds')])
     submit = SubmitField('Filter')
+    search_description = StringField('Search Description', validators=[Optional()])
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -282,6 +283,7 @@ def dashboard():
         due_color = 'coral'
     else:
         due_color = 'lightcoral'
+
     # Calculate total funds for the current month
     # Consolidate funds by type
     current_month_funds = [fund for fund in funds if fund.allocation_date.month == current_month and fund.allocation_date.year == current_year]
@@ -324,12 +326,28 @@ def dashboard():
     else:
         outstanding_color = 'green'
 
+    # Calculate total credit limit and utilized amount
+    total_credit_limit = sum(card.credit_limit for card in credit_cards)
+    total_utilized = total_due + total_outstanding
+
+    # Calculate credit utilization percentage
+    credit_utilization = (total_utilized / total_credit_limit * 100) if total_credit_limit else 0
+
+
+    # Determine the background color for credit utilization
+    if credit_utilization > 30:
+        utilization_color = 'bg-danger'  # Highlight if utilization exceeds 30%
+    else:
+        utilization_color = 'bg-success'
+
     
 
     # Render the dashboard without plots
     return render_template('dashboard.html', expenses=recent_expenses, funds=current_month_funds, credit_cards=credit_cards, 
                            total_available=total_available, balance_color=balance_color,
-                           total_outstanding=total_outstanding, outstanding_color=outstanding_color,consolidated_funds=consolidated_funds,total_due=total_due,due_color=due_color)
+                           total_outstanding=total_outstanding, outstanding_color=outstanding_color
+                           ,consolidated_funds=consolidated_funds,total_due=total_due,due_color=due_color
+                           ,credit_utilization=credit_utilization,utilization_color=utilization_color,total_utilized=total_utilized,total_credit_limit=total_credit_limit)
 
 
 @app.route('/generate_plots', methods=['POST'])
@@ -447,6 +465,7 @@ def view_expenses():
     year = int(request.args.get('year', datetime.now().year))
     selected_category = request.args.get('category', '')
     selected_spend_source = request.args.get('spend_source', '')
+    search_description = request.args.get('search_description', '')
 
     # Handle form submissions
     if filter_form.validate_on_submit():
@@ -454,6 +473,7 @@ def view_expenses():
         year = int(filter_form.year.data)
         selected_category = filter_form.category.data
         selected_spend_source = filter_form.spend_source.data
+        search_description = filter_form.search_description.data
 
     # Query expenses based on filters and sorting
     start_date = datetime(year, month, 1)
@@ -471,6 +491,9 @@ def view_expenses():
 
     if selected_spend_source:
         query = query.filter_by(spend_source=selected_spend_source)
+
+    if search_description:
+        query = query.filter(Expense.description.ilike(f'%{search_description}%'))
 
     if sort_by == 'amount':
         query = query.order_by(Expense.amount.asc() if sort_order == 'asc' else Expense.amount.desc())
@@ -500,13 +523,14 @@ def view_expenses():
             db.session.delete(expense)
             db.session.commit()
             flash('Expense deleted successfully!', 'success')
-            return redirect(url_for('view_expenses', sort_by=sort_by, sort_order=sort_order, month=month, year=year, category=selected_category, spend_source=selected_spend_source))
+            return redirect(url_for('view_expenses', sort_by=sort_by, sort_order=sort_order, month=month, year=year, category=selected_category, spend_source=selected_spend_source, search_description=search_description))
 
     # Populate filter form with current values
     filter_form.month.data = month
     filter_form.year.data = year
     filter_form.category.data = selected_category
     filter_form.spend_source.data = selected_spend_source
+    filter_form.search_description.data = search_description
 
     return render_template(
         'view_expenses.html',
