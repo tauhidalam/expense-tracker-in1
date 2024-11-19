@@ -65,38 +65,41 @@
                     <!-- Credit Limit Utilization Section -->
                     <div class="card mt-4 shadow-sm">
                         <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <!-- Left Section -->
-                                <div>
+                            <div class="row">
+                                <!-- Left Section: Limit Details -->
+                                <div class="col-md-6 col-sm-12 mb-3">
                                     <h5 class="card-title mb-2">Credit Card Details</h5>
                                     {% set utilized = (card.due_amount or 0) + card.outstanding %}
                                     {% set utilization = (utilized / card.credit_limit * 100) if card.credit_limit > 0 else 0 %}
                                     <p class="text-muted mb-0">
                                         Total Limit: ₹{{ card.credit_limit }} <br>
-                                        Outstanding: ₹{{ card.outstanding }} <br>
+                                        Outstanding: ₹{{ card.outstanding }}<br>
                                         Limit Utilised: ₹{{ utilized }} <br>
                                         Available: ₹{{ card.credit_limit - utilized if card.credit_limit > utilized else 0 }}
                                     </p>
                                 </div>
-                                <!-- Right Section -->
-                                <div class="text-center">
+                                <!-- Right Section: Utilization and Due Details -->
+                                <div class="col-md-6 col-sm-12 d-flex flex-column align-items-md-end align-items-start">
                                     <!-- Due Amount -->
-                                    <p class="font-weight-bold px-3 py-2 rounded 
+                                    <p class="font-weight-bold px-3 py-2 rounded mb-2 
                                         {% if card.due_amount and card.due_amount > 0 %} text-white bg-danger 
                                         {% else %} text-dark bg-light {% endif %}">
                                         Due Amount: ₹{{ card.due_amount or 'N/A' }}
                                     </p>
                                     <!-- Due Date -->
-                                    <p class="font-weight-bold text-dark bg-light px-3 py-2 rounded">
+                                    <p class="font-weight-bold text-dark bg-light px-3 py-2 rounded mb-2">
                                         Due Date: {{ card.due_date.strftime('%d-%m-%Y') if card.due_date else 'N/A' }}
                                     </p>
                                     <!-- Utilization Percentage -->
-                                    <h2 class="{{ 'text-danger' if utilization > 30 else 'text-success' }} mb-0">
-                                        {{ utilization|round(2) }}%
-                                    </h2>
-                                    <small class="text-muted">Utilisation</small>
+                                    <div class="text-right w-100">
+                                        <h2 class="{{ 'text-danger' if utilization > 30 else 'text-success' }} mb-0">
+                                            {{ utilization|round(2) }}%
+                                        </h2>
+                                        <small class="text-muted">Utilisation</small>
+                                    </div>
                                 </div>
                             </div>
+                            <!-- Progress Bar -->
                             <div class="progress mt-3" style="height: 25px;">
                                 <div 
                                     class="progress-bar {{ 'bg-danger' if utilization > 30 else 'bg-success' }}" 
@@ -180,7 +183,6 @@
         </div>
     </div>
 </div>
-
 
                     </td>
                 </tr>
