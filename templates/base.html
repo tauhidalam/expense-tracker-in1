@@ -100,7 +100,9 @@
                     <li class="nav-item"><a class="nav-link {% if request.endpoint == 'add_income' %}active{% endif %}" href="{{ url_for('add_income') }}">Add/View Income</a></li>
                     <li class="nav-item"><a class="nav-link {% if request.endpoint == 'add_credit_card' %}active{% endif %}" href="{{ url_for('add_credit_card') }}">Add/View Credit Card</a></li>
                     <li class="nav-item"><a class="nav-link {% if request.endpoint == 'add_fund' %}active{% endif %}" href="{{ url_for('add_fund') }}">Add/View Fund</a></li>
+                    <li class="nav-item"><a class="nav-link {% if request.endpoint == 'add_fund' %}active{% endif %}" href="{{ url_for('debt_buckets') }}">Debt Tracker</a></li>
                     <li class="nav-item"><a class="nav-link {% if request.endpoint == 'export_report' %}active{% endif %}" href="{{ url_for('export_report') }}">Export</a></li>
+
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             Hello, {{ current_user.username }}

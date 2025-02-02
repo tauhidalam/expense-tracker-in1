@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Debt Buckets</h1>
+
+<form method="POST" action="{{ url_for('debt_buckets') }}">
+    <div class="form-group">
+        <label for="bucket_name">New Bucket Name</label>
+        <input type="text" class="form-control" id="bucket_name" name="name" placeholder="Enter bucket name">
+    </div>
+    <button type="submit" class="btn btn-primary">Add Bucket</button>
+</form>
+
+<h2 class="mt-4">Your Debt Buckets</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Balance</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for bucket in buckets %}
+        <tr>
+            <td>{{ bucket.name }}</td>
+            <td>
+                {% if bucket.total_balance > 0 %}
+                    <span class="text-success">You will receive {{ bucket.total_balance }}</span>
+                {% elif bucket.total_balance < 0 %}
+                    <span class="text-danger">You owe {{ -bucket.total_balance }}</span>
+                {% else %}
+                    <span class="text-secondary">Knocked off</span>
+                {% endif %}
+            </td>
+            <td>
+                <a href="{{ url_for('debt_bucket_detail', bucket_id=bucket.id) }}" class="btn btn-info btn-sm">View Details</a>
+                
+            </td>
+            <td>
+                <form method="POST" action="{{ url_for('delete_debt_bucket', bucket_id=bucket.id) }}" onsubmit="return confirm('Deleting this bucket will also remove all transactions. Continue?');">
+                    <button type="submit" class="btn btn-danger btn-sm">
+                        <i class="fas fa-trash-alt"></i> Delete Bucket
+                    </button>
+                </form>
+            </td>
+            
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
