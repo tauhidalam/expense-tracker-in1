@@ -83,21 +83,19 @@ class DebtBucket(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     name = db.Column(db.String(100), nullable=False)
-    total_balance = db.Column(db.Float, default=0.0)  # Positive = user receives; Negative = user owes
+    total_balance = db.Column(db.Float, default=0.0)  # This stores the current balance of the bucket
+    balance_type = db.Column(db.String(50))  # Can store 'credit' or 'debit'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 
 class DebtTransaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     bucket_id = db.Column(db.Integer, db.ForeignKey('debt_bucket.id'), nullable=False)
-    amount = db.Column(db.Float, nullable=False)  # Positive = credit; Negative = debit
-    description = db.Column(db.String(255), nullable=True)
-    date = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-
-
-    
-
-
+    amount = db.Column(db.Float, nullable=False)
+    transaction_type = db.Column(db.String(2), nullable=False)  # 'CR' for Credit, 'DR' for Debit
+    description = db.Column(db.String(255), nullable=True)
+    transaction_date = db.Column(db.DateTime, default=datetime.utcnow)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -948,23 +946,69 @@ def create_spend_source_plot(expenses):
 
     return plot_url
 
-
 @app.route('/debt_buckets', methods=['GET', 'POST'])
 @login_required
 def debt_buckets():
     if request.method == 'POST':
+        # Add new debt bucket functionality
         bucket_name = request.form['name']
-        if bucket_name:
-            new_bucket = DebtBucket(user_id=current_user.id, name=bucket_name)
-            db.session.add(new_bucket)
-            db.session.commit()
-            flash(f'Debt bucket "{bucket_name}" created successfully!', 'success')
-        else:
-            flash('Bucket name cannot be empty.', 'danger')
+        
+        # Ensure the user is not submitting an empty name
+        if not bucket_name:
+            flash('Bucket name cannot be empty!', 'danger')
+            return redirect(url_for('debt_buckets'))
+
+        # Create a new DebtBucket instance
+        new_bucket = DebtBucket(name=bucket_name, user_id=current_user.id)
+
+        # Add the new bucket to the session and commit
+        db.session.add(new_bucket)
+        db.session.commit()
+
+        flash(f'Debt bucket "{bucket_name}" created successfully!', 'success')
         return redirect(url_for('debt_buckets'))
 
+    # Fetch all debt buckets for the current user
     buckets = DebtBucket.query.filter_by(user_id=current_user.id).all()
-    return render_template('debt_buckets.html', buckets=buckets)
+    
+    # Initialize variables to store total credit and debit sums
+    total_credit = 0
+    total_debit = 0
+
+    # Loop through each bucket and calculate total credit and debit sums
+    for bucket in buckets:
+        # Calculate the total credit for each bucket
+        credit_sum = db.session.query(db.func.sum(DebtTransaction.amount)).filter(
+            DebtTransaction.bucket_id == bucket.id, 
+            DebtTransaction.transaction_type == 'credit'
+        ).scalar() or 0
+        
+        # Calculate the total debit for each bucket
+        debit_sum = db.session.query(db.func.sum(DebtTransaction.amount)).filter(
+            DebtTransaction.bucket_id == bucket.id, 
+            DebtTransaction.transaction_type == 'debit'
+        ).scalar() or 0
+        
+        # Update the bucket's total balance
+        bucket_balance = credit_sum - debit_sum
+        bucket.total_balance = bucket_balance  # Store the balance for each bucket
+
+        # Add credit and debit sums to overall totals
+        total_credit += credit_sum
+        total_debit += debit_sum
+    
+    # Calculate the overall balance based on the credit and debit sums
+    overall_balance = total_credit - total_debit
+    balance_type = "credit" if overall_balance > 0 else "debit"
+    
+    # Update the overall balance display text
+    if balance_type == "credit":
+        overall_balance_message = f"You are in credit, total balance: {overall_balance}"
+    else:
+        overall_balance_message = f"You are in debit, total balance: {-overall_balance}"
+
+    return render_template('debt_buckets.html', buckets=buckets, overall_balance=overall_balance, balance_type=balance_type, overall_balance_message=overall_balance_message)
+
 
 @app.route('/debt_buckets/<int:bucket_id>', methods=['GET', 'POST'])
 @login_required
@@ -972,29 +1016,54 @@ def debt_bucket_detail(bucket_id):
     bucket = DebtBucket.query.filter_by(id=bucket_id, user_id=current_user.id).first_or_404()
     
     if request.method == 'POST':
-        amount = float(request.form['amount'])
-        description = request.form['description']
-        
-        # Update the bucket balance
-        bucket.total_balance += amount  # Positive = credit; Negative = debit
-        transaction = DebtTransaction(bucket_id=bucket.id, amount=amount, description=description,user_id=current_user.id)
-        
+        amount = abs(float(request.form['amount']))  # Ensure stored as positive
+        transaction_type = request.form['transaction_type'].strip().lower()  # 'credit' or 'debit'
+        description = request.form.get('description', '')
+        transaction_date = datetime.strptime(request.form['transaction_date'], '%Y-%m-%d')
+
+        # Create a new transaction
+        transaction = DebtTransaction(
+            bucket_id=bucket.id,
+            user_id=current_user.id,
+            amount=amount,  # Always positive
+            transaction_type=transaction_type,
+            description=description,
+            transaction_date=transaction_date
+        )
+
+        # Add the transaction to the database
         db.session.add(transaction)
-        db.session.add(bucket)
+
+        # Update the bucket's balance based on the transaction type
+        if transaction_type == "credit":  # Credit means user will receive money
+            bucket.total_balance += amount
+        elif transaction_type == "debit":  # Debit means user owes money
+            bucket.total_balance -= amount
+
+        # Recalculate the balance_type based on all transactions in the bucket
+        total_credits = sum([t.amount for t in DebtTransaction.query.filter_by(bucket_id=bucket.id, transaction_type='credit')])
+        total_debits = sum([t.amount for t in DebtTransaction.query.filter_by(bucket_id=bucket.id, transaction_type='debit')])
+
+        if total_credits > total_debits:
+            bucket.balance_type = "credit"
+        else:
+            bucket.balance_type = "debit"
+
+        db.session.add(bucket)  # Update the bucket balance and balance_type
         db.session.commit()
-        
-        flash(f'Transaction added: {"Credit" if amount > 0 else "Debit"} of {abs(amount)}.', 'success')
+
+        flash(f'Transaction added: {transaction_type} of {amount}', 'success')
         return redirect(url_for('debt_bucket_detail', bucket_id=bucket.id))
 
-    transactions = DebtTransaction.query.filter_by(bucket_id=bucket.id).order_by(DebtTransaction.date.desc()).all()
+    transactions = DebtTransaction.query.filter_by(bucket_id=bucket.id).order_by(DebtTransaction.transaction_date.desc()).all()
     return render_template('debt_bucket_detail.html', bucket=bucket, transactions=transactions)
 
 @app.route('/delete_debt_transaction/<int:transaction_id>', methods=['POST'])
 @login_required
 def delete_debt_transaction(transaction_id):
-    # Get the debt transaction by ID and ensure it belongs to the current user
+    # Fetch the transaction and ensure the current user owns it
     transaction = DebtTransaction.query.filter_by(id=transaction_id, user_id=current_user.id).first()
-    
+
     if not transaction:
         flash("Unauthorized or transaction not found!", "danger")
         return redirect(url_for('debt_buckets'))
@@ -1002,21 +1071,29 @@ def delete_debt_transaction(transaction_id):
     # Adjust the bucket balance when deleting
     bucket = DebtBucket.query.get(transaction.bucket_id)
     if bucket:
-        if transaction.amount > 0:  # Credit transaction
+        if transaction.transaction_type == "credit":  # If it was a Credit, reduce balance
             bucket.total_balance -= transaction.amount
-        else:  # Debit transaction
+        elif transaction.transaction_type == "debit":  # If it was a Debit, increase balance
             bucket.total_balance += transaction.amount
-        
-        db.session.add(bucket)  # Commit the changes to the bucket balance
 
-    # Delete the debt transaction
+        # Recalculate total credits and debits for the bucket
+        total_credits = sum([t.amount for t in DebtTransaction.query.filter_by(bucket_id=bucket.id, transaction_type='credit')])
+        total_debits = sum([t.amount for t in DebtTransaction.query.filter_by(bucket_id=bucket.id, transaction_type='debit')])
+
+        # Determine the balance_type based on the total credits and debits
+        if total_credits > total_debits:
+            bucket.balance_type = "credit"
+        else:
+            bucket.balance_type = "debit"
+
+        db.session.add(bucket)  # Update the bucket balance and type
+
+    # Delete the transaction
     db.session.delete(transaction)
     db.session.commit()
 
     flash("Debt transaction deleted successfully!", "success")
     return redirect(url_for('debt_buckets'))
-
-
 
 
 
@@ -1027,8 +1104,8 @@ def delete_debt_bucket(bucket_id):
 
     if not bucket or bucket.user_id != current_user.id:
         flash("Unauthorized or bucket not found!", "danger")
-        return redirect(url_for('debt_tracker'))
-
+        return redirect(url_for('debt_buckets'))
+    
     # Delete all transactions linked to this bucket
     DebtTransaction.query.filter_by(bucket_id=bucket.id).delete()
 
@@ -1036,7 +1113,7 @@ def delete_debt_bucket(bucket_id):
     db.session.commit()
     flash("Debt bucket and associated transactions deleted successfully!", "success")
     
-    return redirect(url_for('debt_tracker'))
+    return redirect(url_for('debt_buckets'))
 
 
 

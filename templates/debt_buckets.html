@@ -11,6 +11,32 @@
     <button type="submit" class="btn btn-primary">Add Bucket</button>
 </form>
 
+<!-- Modern Overall Balance Section -->
+<h2 class="mt-4">Overall Balance</h2>
+<div class="card mb-4">
+    <div class="card-body">
+        <h4 class="card-title">Your Total Debt Situation</h4>
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <!-- Display overall balance message dynamically -->
+                {% if overall_balance > 0 %}
+                    <span class="badge bg-success">You are in credit</span>
+                    <p class="h5 text-success">+{{ overall_balance }}</p>
+                    <p class="text-muted">You have more credits than debits.</p>
+                {% elif overall_balance < 0 %}
+                    <span class="badge bg-danger">You owe money</span>
+                    <p class="h5 text-danger">{{ overall_balance }}</p>
+                    <p class="text-muted">You have more debits than credits.</p>
+                {% else %}
+                    <span class="badge bg-secondary">Balance cleared</span>
+                    <p class="h5 text-muted">No outstanding balance.</p>
+                {% endif %}
+            </div>
+            <i class="fas fa-credit-card fa-3x {% if overall_balance > 0 %}text-success{% elif overall_balance < 0 %}text-danger{% else %}text-muted{% endif %}"></i>
+        </div>
+    </div>
+</div>
+
 <h2 class="mt-4">Your Debt Buckets</h2>
 <table class="table">
     <thead>
@@ -25,6 +51,7 @@
         <tr>
             <td>{{ bucket.name }}</td>
             <td>
+                <!-- Color code each bucket balance -->
                 {% if bucket.total_balance > 0 %}
                     <span class="text-success">You will receive {{ bucket.total_balance }}</span>
                 {% elif bucket.total_balance < 0 %}
@@ -35,7 +62,6 @@
             </td>
             <td>
                 <a href="{{ url_for('debt_bucket_detail', bucket_id=bucket.id) }}" class="btn btn-info btn-sm">View Details</a>
-                
             </td>
             <td>
                 <form method="POST" action="{{ url_for('delete_debt_bucket', bucket_id=bucket.id) }}" onsubmit="return confirm('Deleting this bucket will also remove all transactions. Continue?');">
@@ -44,7 +70,6 @@
                     </button>
                 </form>
             </td>
-            
         </tr>
         {% endfor %}
     </tbody>
